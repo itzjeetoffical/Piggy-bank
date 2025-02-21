@@ -36,7 +36,7 @@
 
     <script>
         const SHEET_ID = "1eAoYPFgr4nAZU32WDS4elgOghQPB5nWZ3BnAB3wojRE";
-        const API_KEY = "AIzaSyBkwYdOArIky80uq2m10ZXLmc206R-_yDM";
+        const API_KEY = "";
         const RANGE = "PiggyBank!A1:D";
         const SHEETS_API = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`;
         
