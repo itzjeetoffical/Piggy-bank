@@ -1,1 +1,106 @@
-<h1>Piggy Bank App</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piggy Bank</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        button { margin: 5px; padding: 10px; font-size: 16px; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Digital Piggy Bank</h1>
+    <h2>General Savings</h2>
+    <div id="buttons"></div>
+    <h2>₹5 Lakh Challenge</h2>
+    <div id="challengeButtons"></div>
+    <h2>Total Savings: ₹<span id="total">0</span></h2>
+    <h2>Challenge Total: ₹<span id="challengeTotal">0</span></h2>
+    <input id="location" placeholder="Location" />
+    <button onclick="saveData()">Save Entry</button>
+    <table>
+        <thead>
+            <tr>
+                <th>Sr. No</th>
+                <th>Date & Time</th>
+                <th>Amount</th>
+                <th>Location</th>
+                <th>Type</th>
+            </tr>
+        </thead>
+        <tbody id="log"></tbody>
+    </table>
+
+    <script>
+        const SHEET_ID = "1eAoYPFgr4nAZU32WDS4elgOghQPB5nWZ3BnAB3wojRE";
+        const API_KEY = "AIzaSyBkwYdOArIky80uq2m10ZXLmc206R-_yDM";
+        const RANGE = "PiggyBank!A1:D";
+        const SHEETS_API = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+        
+        const amounts = [1, 2, 5, 10, 20, 50, 100, 200, 500];
+        const challengeAmounts = [1, 10, 100];
+        
+        function createButtons() {
+            const buttonsDiv = document.getElementById("buttons");
+            const challengeDiv = document.getElementById("challengeButtons");
+            
+            amounts.forEach(amt => {
+                let btn = document.createElement("button");
+                btn.innerText = `₹${amt}`;
+                btn.onclick = () => addAmount(amt, "General");
+                buttonsDiv.appendChild(btn);
+            });
+            
+            challengeAmounts.forEach(amt => {
+                let btn = document.createElement("button");
+                btn.innerText = `₹${amt}`;
+                btn.onclick = () => addAmount(amt, "Challenge");
+                challengeDiv.appendChild(btn);
+            });
+        }
+        
+        async function fetchData() {
+            const response = await fetch(SHEETS_API);
+            const data = await response.json();
+            if (data.values) {
+                let logs = data.values.slice(1);
+                document.getElementById("log").innerHTML = logs.map((row, i) => `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${row[0]}</td>
+                        <td>₹${row[1]}</td>
+                        <td>${row[2] || ""}</td>
+                        <td>${row[3] || "General"}</td>
+                    </tr>
+                `).join("");
+                document.getElementById("total").innerText = logs.filter(row => row[3] === "General").reduce((sum, entry) => sum + parseInt(entry[1]), 0);
+                document.getElementById("challengeTotal").innerText = logs.filter(row => row[3] === "Challenge").reduce((sum, entry) => sum + parseInt(entry[1]), 0);
+            }
+        }
+        
+        async function addAmount(amount, type) {
+            const date = new Date().toLocaleString();
+            const location = document.getElementById("location").value;
+            const updateSheet = {
+                range: RANGE,
+                majorDimension: "ROWS",
+                values: [[date, amount, location, type]]
+            };
+            
+            await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}:append?valueInputOption=USER_ENTERED&key=${API_KEY}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updateSheet)
+            });
+            
+            fetchData();
+        }
+        
+        createButtons();
+        fetchData();
+    </script>
+</body>
+</html>
